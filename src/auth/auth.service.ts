@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import * as bcrypt from 'bcrypt'
+import { Types } from 'mongoose'
 import { UserDocument } from '../users/schemas/user.schema'
 import { UsersService } from '../users/users.service'
 import { CreateUserDto } from './dto/create-user.dto'
@@ -21,7 +22,14 @@ export class AuthService {
 			password: hashedPassword,
 		})
 
-		return this.generateTokens(user)
+		const tokens = await this.generateTokens(user)
+
+		await this.usersService.updateRefreshToken(
+			(user._id as Types.ObjectId).toString(),
+			tokens.refreshToken
+		)
+
+		return tokens
 	}
 
 	async login(dto: LoginUserDto) {
@@ -31,7 +39,14 @@ export class AuthService {
 			throw new UnauthorizedException('Неверный email или пароль')
 		}
 
-		return this.generateTokens(user)
+		const tokens = await this.generateTokens(user as UserDocument)
+
+		await this.usersService.updateRefreshToken(
+			(user._id as Types.ObjectId).toString(),
+			tokens.refreshToken
+		)
+
+		return tokens
 	}
 
 	private async generateTokens(user: UserDocument) {
@@ -59,14 +74,31 @@ export class AuthService {
 				secret: process.env.JWT_REFRESH_SECRET,
 			})
 
-			const user = await this.usersService.findById(payload.sub)
-			if (!user) {
-				throw new UnauthorizedException('Пользователь не найден')
+			const user = (await this.usersService.findById(
+				payload.sub
+			)) as UserDocument
+
+			if (!user || user.refreshToken !== refreshToken) {
+				throw new UnauthorizedException(
+					'Неверный или просроченный refresh токен'
+				)
 			}
 
-			return this.generateTokens(user)
+			const tokens = await this.generateTokens(user)
+
+			await this.usersService.updateRefreshToken(
+				(user._id as Types.ObjectId).toString(),
+				tokens.refreshToken
+			)
+
+			return tokens
 		} catch (error) {
 			throw new UnauthorizedException('Неверный или просроченный refresh токен')
 		}
+	}
+
+	async logout(userId: string) {
+		await this.usersService.clearRefreshToken(userId)
+		return { message: 'Вы успешно вышли' }
 	}
 }

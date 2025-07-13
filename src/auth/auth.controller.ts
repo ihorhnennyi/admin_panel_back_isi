@@ -49,4 +49,13 @@ export class AuthController {
 	refresh(@Body() dto: RefreshTokenDto) {
 		return this.authService.refreshTokens(dto.refreshToken)
 	}
+
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Выход пользователя (удаление refresh токена)' })
+	@ApiResponse({ status: 200, description: 'Выход выполнен успешно' })
+	@Post('logout')
+	logout(@CurrentUser() user: { userId: string }) {
+		return this.authService.logout(user.userId)
+	}
 }

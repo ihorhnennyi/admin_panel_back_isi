@@ -20,6 +20,14 @@ export class UsersService {
 	}
 
 	async findById(id: string): Promise<UserDocument | null> {
-		return this.userModel.findById(id)
+		return this.userModel.findById(id).exec() as Promise<UserDocument | null>
+	}
+
+	async updateRefreshToken(userId: string, refreshToken: string) {
+		return this.userModel.findByIdAndUpdate(userId, { refreshToken })
+	}
+
+	async clearRefreshToken(userId: string) {
+		return this.userModel.findByIdAndUpdate(userId, { refreshToken: null })
 	}
 }

@@ -10,6 +10,7 @@ import { AuthService } from './auth.service'
 import { CurrentUser } from './decorators/current-user.decorator'
 import { CreateUserDto } from './dto/create-user.dto'
 import { LoginUserDto } from './dto/login-user.dto'
+import { RefreshTokenDto } from './dto/refresh-token.dto'
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -40,5 +41,12 @@ export class AuthController {
 	@Get('me')
 	getMe(@CurrentUser() user: { userId: string; role: string }) {
 		return user
+	}
+
+	@ApiOperation({ summary: 'Обновить access и refresh токены' })
+	@ApiResponse({ status: 200, description: 'Токены обновлены' })
+	@Post('refresh')
+	refresh(@Body() dto: RefreshTokenDto) {
+		return this.authService.refreshTokens(dto.refreshToken)
 	}
 }

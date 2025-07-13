@@ -52,4 +52,21 @@ export class AuthService {
 
 		return { accessToken, refreshToken }
 	}
+
+	async refreshTokens(refreshToken: string) {
+		try {
+			const payload = await this.jwtService.verifyAsync(refreshToken, {
+				secret: process.env.JWT_REFRESH_SECRET,
+			})
+
+			const user = await this.usersService.findById(payload.sub)
+			if (!user) {
+				throw new UnauthorizedException('Пользователь не найден')
+			}
+
+			return this.generateTokens(user)
+		} catch (error) {
+			throw new UnauthorizedException('Неверный или просроченный refresh токен')
+		}
+	}
 }

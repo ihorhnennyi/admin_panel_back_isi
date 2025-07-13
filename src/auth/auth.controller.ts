@@ -1,6 +1,13 @@
-import { Body, Controller, Post } from '@nestjs/common'
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common'
+import {
+	ApiBearerAuth,
+	ApiOperation,
+	ApiResponse,
+	ApiTags,
+} from '@nestjs/swagger'
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard'
 import { AuthService } from './auth.service'
+import { CurrentUser } from './decorators/current-user.decorator'
 import { CreateUserDto } from './dto/create-user.dto'
 import { LoginUserDto } from './dto/login-user.dto'
 
@@ -24,5 +31,14 @@ export class AuthController {
 	@Post('login')
 	login(@Body() dto: LoginUserDto) {
 		return this.authService.login(dto)
+	}
+
+	@UseGuards(JwtAuthGuard)
+	@ApiBearerAuth()
+	@ApiOperation({ summary: 'Получить текущего пользователя' })
+	@ApiResponse({ status: 200, description: 'Информация о пользователе' })
+	@Get('me')
+	getMe(@CurrentUser() user: { userId: string; role: string }) {
+		return user
 	}
 }

@@ -15,6 +15,22 @@ export class NewsService {
 		return this.newsModel.create(dto)
 	}
 
+	async update(id: string, dto: Partial<News>): Promise<News> {
+		const news = await this.newsModel.findByIdAndUpdate(id, dto, { new: true })
+
+		if (!news) {
+			throw new NotFoundException('Новость не найдена')
+		}
+
+		return news
+	}
+
+	async delete(id: string): Promise<{ message: string }> {
+		const result = await this.newsModel.findByIdAndDelete(id)
+		if (!result) throw new NotFoundException('Новость не найдена')
+		return { message: 'Новость удалена' }
+	}
+
 	async findAll(): Promise<News[]> {
 		return this.newsModel.find().sort({ createdAt: -1 }).exec()
 	}
